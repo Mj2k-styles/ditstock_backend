@@ -1,0 +1,14 @@
+# Environnement virtuel
+venv/
+.venv/
+
+# Variables sensibles
+.env
+
+# Fichiers Python temporaires
+__pycache__/
+*.py[cod]
+
+# Base de données locale
+*.db
+instance/
