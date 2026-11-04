@@ -22,7 +22,9 @@ def create_app():
     app.config["SECRET_KEY"] = os.getenv(
         "SECRET_KEY", "cle-temporaire-de-developpement"
     )
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gestion_stock.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+        "DATABASE_URL", "sqlite:///gestion_stock.db"
+    )
 
     # Initialiser les extensions avec l'application
     db.init_app(app)
