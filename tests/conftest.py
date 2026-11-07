@@ -9,13 +9,12 @@ PASSWORD = "MotDePasse123"
 
 @pytest.fixture
 def app():
-    """Application de test avec une base SQLite en mémoire."""
     app = create_app({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "JWT_SECRET_KEY": "cle-de-test-suffisamment-longue-pour-hs256",
         "SECRET_KEY": "cle-de-test",
-        "BCRYPT_ROUNDS": 4,  # rapide pour les tests
+        "BCRYPT_ROUNDS": 4,
     })
 
     with app.app_context():
@@ -60,12 +59,12 @@ def magasinier(app):
 
 def login(client, email, password=PASSWORD):
     return client.post(
-        "/api/auth/login", json={"email": email, "password": password}
+        "/api/auth/login",
+        json={"email": email, "password": password}
     )
 
 
 def auth_header(client, user):
-    """Se connecte et retourne l'en-tête Authorization (access token)."""
     response = login(client, user.email)
     token = response.get_json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -94,5 +93,5 @@ def product_payload():
         "description": "Boîte de 100",
         "category_id": 1,
         "unit_price": "12.50",
-        "minimum_stock": 5,
+        "minimum_stock": 5
     }
