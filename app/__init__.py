@@ -72,26 +72,32 @@ def create_app(test_config=None):
         # Charger les modèles
        # Charger les modèles
     with app.app_context():
-        from app.models import product, category, user, supplier
+        from app.models import product, category, user, supplier, Warehouse, warehouse_stock
 
     # Enregistrer les routes
     from app.routes.health import health_ns
     from app.routes.products import products_ns
     from app.routes.categories import categories_ns
     from app.routes.suppliers import suppliers_ns
+    from app.routes.warehouses import warehouses_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(products_ns, path="/api/products")
     api.add_namespace(categories_ns, path="/api/categories")
     api.add_namespace(suppliers_ns, path="/api/suppliers")
+    api.add_namespace(warehouses_ns, path="/api/warehouses")
 
     from app.routes.auth import auth_ns
     from app.routes.users import users_ns
+    from app.routes.warehouse_stock import warehouse_stocks_ns
+    from app.routes.alerts import alerts_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(products_ns, path="/api/products")
     api.add_namespace(auth_ns, path="/api/auth")
     api.add_namespace(users_ns, path="/api/users")
+    api.add_namespace(warehouse_stocks_ns, path="/api/warehouse-stocks")
+    api.add_namespace(alerts_ns, path="/api/alerts")
 
     # Commandes CLI (flask create-admin)
     from app.cli import create_admin
