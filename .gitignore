@@ -12,3 +12,7 @@ __pycache__/
 # Base de données locale
 *.db
 instance/
+
+.coverage
+.pytest_cache/
+htmlcov/
