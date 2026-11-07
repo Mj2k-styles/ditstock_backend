@@ -69,19 +69,21 @@ def create_app(test_config=None):
     )
 
     # Charger les modèles
+        # Charger les modèles
+       # Charger les modèles
     with app.app_context():
-
-        from app.models import product, category
-        from app.models import product, user
+        from app.models import product, category, user, supplier
 
     # Enregistrer les routes
     from app.routes.health import health_ns
     from app.routes.products import products_ns
     from app.routes.categories import categories_ns
+    from app.routes.suppliers import suppliers_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(products_ns, path="/api/products")
     api.add_namespace(categories_ns, path="/api/categories")
+    api.add_namespace(suppliers_ns, path="/api/suppliers")
 
     from app.routes.auth import auth_ns
     from app.routes.users import users_ns
