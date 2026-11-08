@@ -5,6 +5,8 @@ from flask_jwt_extended import JWTManager
 from flask_restx import Api
 from dotenv import load_dotenv
 from datetime import timedelta
+from prometheus_flask_exporter import PrometheusMetrics
+
 import os
 
 # Charger les variables du fichier .env
@@ -106,5 +108,8 @@ def create_app(test_config=None):
     # Commandes CLI (flask create-admin)
     from app.cli import create_admin
     app.cli.add_command(create_admin)
+
+        # Initialiser Prometheus après l'enregistrement des routes
+    metrics = PrometheusMetrics(app)
 
     return app
