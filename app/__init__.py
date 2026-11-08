@@ -91,6 +91,8 @@ def create_app(test_config=None):
     from app.routes.users import users_ns
     from app.routes.warehouse_stock import warehouse_stocks_ns
     from app.routes.alerts import alerts_ns
+    from app.routes.dashboard import dashboard_ns
+    from app.routes.exports import exports_ns
 
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(products_ns, path="/api/products")
@@ -98,6 +100,8 @@ def create_app(test_config=None):
     api.add_namespace(users_ns, path="/api/users")
     api.add_namespace(warehouse_stocks_ns, path="/api/warehouse-stocks")
     api.add_namespace(alerts_ns, path="/api/alerts")
+    api.add_namespace(dashboard_ns, path="/api/dashboard")
+    api.add_namespace(exports_ns, path="/api/exports")
 
     # Commandes CLI (flask create-admin)
     from app.cli import create_admin
