@@ -86,6 +86,13 @@ def magasinier_headers(client, magasinier):
 
 
 @pytest.fixture
+def as_gestionnaire(client, gestionnaire):
+    """Ajoute le token d'un gestionnaire à toutes les requêtes du client."""
+    token = auth_header(client, gestionnaire)["Authorization"]
+    client.environ_base["HTTP_AUTHORIZATION"] = token
+
+
+@pytest.fixture
 def product_payload():
     return {
         "sku": "SKU-001",

@@ -1,3 +1,9 @@
+import pytest
+
+# Routes protégées : toutes les requêtes sont faites en tant que gestionnaire
+pytestmark = pytest.mark.usefixtures("as_gestionnaire")
+
+
 def test_create_warehouse(client):
     response = client.post("/api/warehouses/", json={
         "name": "Entrepôt principal",

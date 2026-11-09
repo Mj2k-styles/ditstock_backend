@@ -4,6 +4,8 @@ from app import db
 from app.models.warehouse_stock import WarehouseStock
 from app.models.warehouse import Warehouse
 from app.models.product import Product
+from app.constants import ROLE_GESTIONNAIRE, ROLE_MAGASINIER
+from app.utils.decorators import login_required, roles_required
 
 warehouse_stocks_ns = Namespace(
     "warehouse_stocks",
@@ -12,8 +14,10 @@ warehouse_stocks_ns = Namespace(
 
 
 @warehouse_stocks_ns.route("/")
+@warehouse_stocks_ns.doc(security="Bearer")
 class WarehouseStockList(Resource):
 
+    @login_required
     def get(self):
         stocks = WarehouseStock.query.all()
 
@@ -24,6 +28,7 @@ class WarehouseStockList(Resource):
             "quantity": s.quantity
         } for s in stocks], 200
 
+    @roles_required(ROLE_GESTIONNAIRE, ROLE_MAGASINIER)
     def post(self):
         data = request.get_json() or {}
 

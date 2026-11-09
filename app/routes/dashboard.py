@@ -4,6 +4,7 @@ from sqlalchemy import func
 
 from app import db
 from app.models import Product, WarehouseStock
+from app.utils.decorators import login_required
 
 dashboard_ns = Namespace(
     "dashboard",
@@ -12,8 +13,10 @@ dashboard_ns = Namespace(
 
 
 @dashboard_ns.route("/stats")
+@dashboard_ns.doc(security="Bearer")
 class DashboardStats(Resource):
 
+    @login_required
     def get(self):
         # 1. Nombre de produits actifs
         total_products = Product.query.filter_by(

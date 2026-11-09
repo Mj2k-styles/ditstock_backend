@@ -1,5 +1,10 @@
+import pytest
+
 from app import db
 from app.models.product import Product
+
+# Routes protégées : toutes les requêtes sont faites en tant que gestionnaire
+pytestmark = pytest.mark.usefixtures("as_gestionnaire")
 
 
 def test_create_warehouse_stock_and_alert(client, app):
