@@ -13,6 +13,8 @@ from flask_restx import Namespace, Resource
 from app.models.product import Product
 from app.models.warehouse import Warehouse
 from app.models.warehouse_stock import WarehouseStock
+from app.constants import ROLE_GESTIONNAIRE
+from app.utils.decorators import roles_required
 
 exports_ns = Namespace(
     "exports",
@@ -21,8 +23,10 @@ exports_ns = Namespace(
 
 
 @exports_ns.route("/stock/csv")
+@exports_ns.doc(security="Bearer")
 class StockCSVExport(Resource):
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def get(self):
         stocks = WarehouseStock.query.join(
             Product,
@@ -74,8 +78,10 @@ class StockCSVExport(Resource):
         )
     
 @exports_ns.route("/stock/pdf")
+@exports_ns.doc(security="Bearer")
 class StockPDFExport(Resource):
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def get(self):
         stocks = WarehouseStock.query.join(
             Product,

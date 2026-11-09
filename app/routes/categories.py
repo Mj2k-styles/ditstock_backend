@@ -5,6 +5,8 @@ from marshmallow import ValidationError
 from app import db
 from app.models.category import Category
 from app.schemas.category_schema import CategorySchema
+from app.constants import ROLE_GESTIONNAIRE
+from app.utils.decorators import login_required, roles_required
 
 
 categories_ns = Namespace(
@@ -19,8 +21,10 @@ category_model = categories_ns.model("Category", {
 
 
 @categories_ns.route("/")
+@categories_ns.doc(security="Bearer")
 class CategoryList(Resource):
 
+    @login_required
     def get(self):
         categories = Category.query.filter_by(
             is_archived=False
@@ -35,6 +39,7 @@ class CategoryList(Resource):
             for category in categories
         ], 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     @categories_ns.expect(category_model)
     def post(self):
         data_json = request.get_json(silent=True)
@@ -67,8 +72,10 @@ class CategoryList(Resource):
 
 
 @categories_ns.route("/<int:category_id>")
+@categories_ns.doc(security="Bearer")
 class CategoryDetail(Resource):
 
+    @login_required
     def get(self, category_id):
         category = Category.query.filter_by(
             id=category_id,
@@ -84,6 +91,7 @@ class CategoryDetail(Resource):
             "description": category.description
         }, 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     @categories_ns.expect(category_model)
     def put(self, category_id):
         category = Category.query.filter_by(
@@ -123,6 +131,7 @@ class CategoryDetail(Resource):
             "name": category.name
         }, 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def delete(self, category_id):
         category = Category.query.filter_by(
             id=category_id,

@@ -2,13 +2,16 @@ from flask_restx import Namespace, Resource
 from app.models.warehouse_stock import WarehouseStock
 from app.models.product import Product
 from app.models.warehouse import Warehouse
+from app.utils.decorators import login_required
 
 alerts_ns = Namespace("alerts", description="Alertes de stock")
 
 
 @alerts_ns.route("/")
+@alerts_ns.doc(security="Bearer")
 class StockAlerts(Resource):
 
+    @login_required
     def get(self):
         stocks = WarehouseStock.query.join(
             Product, WarehouseStock.product_id == Product.id
