@@ -47,21 +47,19 @@ class StockCSVExport(Resource):
             "Prix unitaire",
             "Valeur du stock"
         ])
-
         for stock in stocks:
-            product = stock.product_id
-            warehouse = stock.warehouse_id
+            product = db.session.get(Product, stock.product_id)
+            warehouse = db.session.get(Warehouse, stock.warehouse_id)
 
             writer.writerow([
-                Product.query.get(product).sku,
-                Product.query.get(product).name,
-                Warehouse.query.get(warehouse).name,
+                product.sku,
+                product.name,
+                warehouse.name,
                 stock.quantity,
-                Product.query.get(product).minimum_stock,
-                Product.query.get(product).unit_price,
-                stock.quantity * Product.query.get(product).unit_price
+                product.minimum_stock,
+                product.unit_price,
+                stock.quantity * product.unit_price
             ])
-
         csv_content = "\ufeff" + output.getvalue()
 
         return Response(

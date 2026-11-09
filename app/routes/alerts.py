@@ -1,4 +1,6 @@
+
 from flask_restx import Namespace, Resource
+from app import db
 from app.models.warehouse_stock import WarehouseStock
 from app.models.product import Product
 from app.models.warehouse import Warehouse
@@ -22,9 +24,9 @@ class StockAlerts(Resource):
 
         return [{
             "product_id": stock.product_id,
-            "product_name": Product.query.get(stock.product_id).name,
+            "product_name": db.session.get(Product, stock.product_id).name,
             "warehouse_id": stock.warehouse_id,
-            "warehouse_name": Warehouse.query.get(stock.warehouse_id).name,
+            "warehouse_name": db.session.get(Warehouse, stock.warehouse_id).name,
             "quantity": stock.quantity,
-            "minimum_stock": Product.query.get(stock.product_id).minimum_stock
+            "minimum_stock": db.session.get(Product, stock.product_id).minimum_stock
         } for stock in stocks], 200
