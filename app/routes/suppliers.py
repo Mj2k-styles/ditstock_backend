@@ -5,6 +5,8 @@ from marshmallow import ValidationError
 from app import db
 from app.models.supplier import Supplier
 from app.schemas.supplier_schema import SupplierSchema
+from app.constants import ROLE_GESTIONNAIRE
+from app.utils.decorators import login_required, roles_required
 
 suppliers_ns = Namespace(
     "suppliers",
@@ -21,8 +23,10 @@ supplier_model = suppliers_ns.model("Supplier", {
 
 # Liste et création des fournisseurs
 @suppliers_ns.route("/")
+@suppliers_ns.doc(security="Bearer")
 class SupplierList(Resource):
 
+    @login_required
     def get(self):
         suppliers = Supplier.query.filter_by(is_archived=False).all()
 
@@ -37,6 +41,7 @@ class SupplierList(Resource):
             for s in suppliers
         ], 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     @suppliers_ns.expect(supplier_model)
     def post(self):
         data_json = request.get_json(silent=True)
@@ -62,8 +67,10 @@ class SupplierList(Resource):
 
 # Consultation, modification et archivage
 @suppliers_ns.route("/<int:supplier_id>")
+@suppliers_ns.doc(security="Bearer")
 class SupplierDetail(Resource):
 
+    @login_required
     def get(self, supplier_id):
         supplier = Supplier.query.filter_by(
             id=supplier_id,
@@ -81,6 +88,7 @@ class SupplierDetail(Resource):
             "address": supplier.address
         }, 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     @suppliers_ns.expect(supplier_model)
     def put(self, supplier_id):
         supplier = Supplier.query.filter_by(
@@ -112,6 +120,7 @@ class SupplierDetail(Resource):
             "name": supplier.name
         }, 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def delete(self, supplier_id):
         supplier = Supplier.query.filter_by(
             id=supplier_id,

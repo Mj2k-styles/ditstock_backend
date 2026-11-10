@@ -1,3 +1,9 @@
+import pytest
+
+# Routes protégées : toutes les requêtes sont faites en tant que gestionnaire
+pytestmark = pytest.mark.usefixtures("as_gestionnaire")
+
+
 def test_create_product(client, gestionnaire_headers):
     response = client.post(
         "/api/products/",

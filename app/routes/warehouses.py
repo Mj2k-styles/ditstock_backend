@@ -5,6 +5,8 @@ from marshmallow import ValidationError
 from app import db
 from app.models.warehouse import Warehouse
 from app.schemas.warehouse_schema import WarehouseSchema
+from app.constants import ROLE_GESTIONNAIRE
+from app.utils.decorators import login_required, roles_required
 
 warehouses_ns = Namespace("warehouses", description="Gestion des entrepôts")
 
@@ -19,12 +21,15 @@ warehouse_model = warehouses_ns.model("Warehouse", {
 
 
 @warehouses_ns.route("/")
+@warehouses_ns.doc(security="Bearer")
 class WarehouseList(Resource):
 
+    @login_required
     def get(self):
         warehouses = Warehouse.query.filter_by(is_archived=False).all()
         return warehouses_schema.dump(warehouses), 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def post(self):
         try:
             data = warehouse_schema.load(request.get_json() or {})
@@ -42,8 +47,10 @@ class WarehouseList(Resource):
 
 
 @warehouses_ns.route("/<int:warehouse_id>")
+@warehouses_ns.doc(security="Bearer")
 class WarehouseDetail(Resource):
 
+    @login_required
     def get(self, warehouse_id):
         warehouse = Warehouse.query.filter_by(
             id=warehouse_id,
@@ -55,6 +62,7 @@ class WarehouseDetail(Resource):
 
         return warehouse_schema.dump(warehouse), 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def put(self, warehouse_id):
         warehouse = Warehouse.query.filter_by(
             id=warehouse_id,
@@ -87,6 +95,7 @@ class WarehouseDetail(Resource):
         db.session.commit()
         return warehouse_schema.dump(warehouse), 200
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def delete(self, warehouse_id):
         warehouse = Warehouse.query.filter_by(
             id=warehouse_id,
