@@ -13,6 +13,8 @@ from flask_restx import Namespace, Resource
 from app.models.product import Product
 from app.models.warehouse import Warehouse
 from app.models.warehouse_stock import WarehouseStock
+from app.constants import ROLE_GESTIONNAIRE
+from app.utils.decorators import roles_required
 
 exports_ns = Namespace(
     "exports",
@@ -21,8 +23,10 @@ exports_ns = Namespace(
 
 
 @exports_ns.route("/stock/csv")
+@exports_ns.doc(security="Bearer")
 class StockCSVExport(Resource):
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def get(self):
         stocks = WarehouseStock.query.join(
             Product,
@@ -47,19 +51,21 @@ class StockCSVExport(Resource):
             "Prix unitaire",
             "Valeur du stock"
         ])
+
         for stock in stocks:
-            product = db.session.get(Product, stock.product_id)
-            warehouse = db.session.get(Warehouse, stock.warehouse_id)
+            product = stock.product_id
+            warehouse = stock.warehouse_id
 
             writer.writerow([
-                product.sku,
-                product.name,
-                warehouse.name,
+                Product.query.get(product).sku,
+                Product.query.get(product).name,
+                Warehouse.query.get(warehouse).name,
                 stock.quantity,
-                product.minimum_stock,
-                product.unit_price,
-                stock.quantity * product.unit_price
+                Product.query.get(product).minimum_stock,
+                Product.query.get(product).unit_price,
+                stock.quantity * Product.query.get(product).unit_price
             ])
+
         csv_content = "\ufeff" + output.getvalue()
 
         return Response(
@@ -72,8 +78,10 @@ class StockCSVExport(Resource):
         )
     
 @exports_ns.route("/stock/pdf")
+@exports_ns.doc(security="Bearer")
 class StockPDFExport(Resource):
 
+    @roles_required(ROLE_GESTIONNAIRE)
     def get(self):
         stocks = WarehouseStock.query.join(
             Product,
