@@ -2,6 +2,9 @@ from app import db
 from app.models.product import Product
 from app.models.warehouse import Warehouse
 from app.models.warehouse_stock import WarehouseStock
+import pytest
+
+pytestmark = pytest.mark.usefixtures("as_gestionnaire")
 
 
 def test_dashboard_stats_empty(client):
