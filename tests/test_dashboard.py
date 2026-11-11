@@ -13,12 +13,21 @@ def test_dashboard_stats_empty(client):
     response = client.get("/api/dashboard/stats")
 
     assert response.status_code == 200
+
     assert response.json == {
         "total_products": 0,
         "stock_value": 0.0,
         "total_alerts": 0,
         "movements_today": 0
     }
+
+    data = response.get_json()
+    assert data["total_products"] == 0
+    assert data["stock_value"] == 0
+    assert data["total_alerts"] == 0
+    assert data["movements_today"] == 0
+    assert data["top_products"] == []
+    assert len(data["movements_30d"]) == 30
 
 
 def test_dashboard_stats_with_stock(app, client):
