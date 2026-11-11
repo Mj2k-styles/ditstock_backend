@@ -4,6 +4,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from app.models.stock_movement import StockMovement
 import csv
 import io
 
@@ -157,5 +158,136 @@ class StockPDFExport(Resource):
                     "attachment; filename=etat_du_stock.pdf"
             }
         )
+
+@exports_ns.route("/movements/csv")
+@exports_ns.doc(security="Bearer")
+class MovementCSVExport(Resource):
+
+    @roles_required(ROLE_GESTIONNAIRE)
+    def get(self):
+        movements = StockMovement.query.order_by(
+            StockMovement.created_at.desc()
+        ).all()
+
+        output = io.StringIO(newline="")
+        writer = csv.writer(output, delimiter=";")
+
+        writer.writerow([
+            "ID",
+            "Type",
+            "SKU",
+            "Produit",
+            "Entrepot source",
+            "Entrepot destination",
+            "Quantite",
+            "Motif",
+            "Reference",
+            "Date"
+        ])
+
+        for movement in movements:
+            writer.writerow([
+                movement.id,
+                movement.type,
+                movement.product.sku,
+                movement.product.name,
+                movement.warehouse.name,
+                movement.warehouse_dest.name
+                if movement.warehouse_dest else "",
+                movement.quantity,
+                movement.reason or "",
+                movement.reference or "",
+                movement.created_at.strftime("%d/%m/%Y %H:%M:%S")
+            ])
+
+        csv_content = "\ufeff" + output.getvalue()
+
+        return Response(
+            csv_content,
+            mimetype="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition":
+                    "attachment; filename=historique_mouvements.csv"
+            }
+        )
+
+@exports_ns.route("/movements/pdf")
+@exports_ns.doc(security="Bearer")
+class MovementPDFExport(Resource):
+
+    @roles_required(ROLE_GESTIONNAIRE)
+    def get(self):
+        movements = StockMovement.query.order_by(
+            StockMovement.created_at.desc()
+        ).all()
+
+        buffer = BytesIO()
+
+        document = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            title="Historique des mouvements"
+        )
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(
+            Paragraph("HISTORIQUE DES MOUVEMENTS", styles["Title"])
+        )
+        elements.append(Spacer(1, 20))
+
+        data = [[
+            "ID",
+            "Type",
+            "SKU",
+            "Produit",
+            "Entrepot source",
+            "Entrepot destination",
+            "Quantite",
+            "Motif",
+            "Date"
+        ]]
+
+        for movement in movements:
+            data.append([
+                movement.id,
+                movement.type,
+                movement.product.sku,
+                movement.product.name,
+                movement.warehouse.name,
+                movement.warehouse_dest.name
+                if movement.warehouse_dest else "-",
+                movement.quantity,
+                movement.reason or "-",
+                movement.created_at.strftime("%d/%m/%Y %H:%M")
+            ])
+
+        table = Table(data, repeatRows=1)
+
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTSIZE", (0, 0), (-1, -1), 7),
+            ("PADDING", (0, 0), (-1, -1), 6),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+             [colors.white, colors.lightgrey])
+        ]))
+
+        elements.append(table)
+        document.build(elements)
+
+        buffer.seek(0)
+
+        return Response(
+            buffer.getvalue(),
+            mimetype="application/pdf",
+            headers={
+                "Content-Disposition":
+                    "attachment; filename=historique_mouvements.pdf"
+            }
+        )    
 
     
