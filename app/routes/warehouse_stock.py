@@ -1,3 +1,4 @@
+
 from flask import request
 from flask_restx import Namespace, Resource
 from app import db
@@ -32,8 +33,18 @@ class WarehouseStockList(Resource):
     def post(self):
         data = request.get_json() or {}
 
-        warehouse = db.session.get(Warehouse, data.get("warehouse_id"))
-        product = db.session.get(Product, data.get("product_id"))
+        warehouse_id = data.get("warehouse_id")
+        product_id = data.get("product_id")
+
+        warehouse = (
+            db.session.get(Warehouse, warehouse_id)
+            if warehouse_id is not None else None
+        )
+
+        product = (
+            db.session.get(Product, product_id)
+            if product_id is not None else None
+        )
 
         if not warehouse or warehouse.is_archived:
             return {"message": "Entrepôt introuvable."}, 404
