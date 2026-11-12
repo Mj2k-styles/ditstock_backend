@@ -1,7 +1,7 @@
 import pytest
 
-# Routes protégées : toutes les requêtes sont faites en tant que gestionnaire
-pytestmark = pytest.mark.usefixtures("as_gestionnaire")
+# Les entrepôts sont gérés par l'administrateur (cahier des charges, section 2)
+pytestmark = pytest.mark.usefixtures("as_admin")
 
 
 def test_create_warehouse(client):

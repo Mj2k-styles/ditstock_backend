@@ -93,6 +93,13 @@ def as_gestionnaire(client, gestionnaire):
 
 
 @pytest.fixture
+def as_admin(client, admin):
+    """Ajoute le token d'un administrateur à toutes les requêtes du client."""
+    token = auth_header(client, admin)["Authorization"]
+    client.environ_base["HTTP_AUTHORIZATION"] = token
+
+
+@pytest.fixture
 def product_payload():
     return {
         "sku": "SKU-001",
