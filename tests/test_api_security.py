@@ -105,3 +105,27 @@ def test_admin_peut_modifier_le_referentiel(client, admin_headers):
     )
 
     assert response.status_code == 201
+
+
+# Entrepôts : gérés par l'administrateur seul (cahier des charges, section 2)
+@pytest.mark.parametrize("method, url", [
+    ("post", "/api/warehouses/"),
+    ("put", "/api/warehouses/1"),
+    ("delete", "/api/warehouses/1"),
+])
+def test_gestionnaire_ne_gere_pas_les_entrepots(
+    client, gestionnaire_headers, method, url
+):
+    response = getattr(client, method)(
+        url, json={"name": "Entrepôt"}, headers=gestionnaire_headers
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_peut_creer_un_entrepot(client, admin_headers):
+    response = client.post(
+        "/api/warehouses/", json={"name": "Entrepôt Nord"}, headers=admin_headers
+    )
+
+    assert response.status_code == 201
