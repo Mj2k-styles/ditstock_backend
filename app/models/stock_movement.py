@@ -33,6 +33,11 @@ class StockMovement(db.Model):
         db.Integer, db.ForeignKey("warehouses.id"), nullable=True
     )
 
+    # Fournisseur à l'origine d'une entrée (historique des approvisionnements)
+    supplier_id = db.Column(
+        db.Integer, db.ForeignKey("suppliers.id"), nullable=True, index=True
+    )
+
     # Quantité : toujours > 0, sauf pour un AJUSTEMENT où c'est l'écart
     # (positif ou négatif, mais jamais 0)
     quantity = db.Column(db.Integer, nullable=False)
@@ -59,6 +64,7 @@ class StockMovement(db.Model):
     warehouse_dest = db.relationship(
         "Warehouse", foreign_keys=[warehouse_dest_id]
     )
+    supplier = db.relationship("Supplier")
     user = db.relationship("User")
 
     __table_args__ = (

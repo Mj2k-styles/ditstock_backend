@@ -34,6 +34,7 @@ def create_stock_data(app):
         db.session.add(stock)
         db.session.commit()
 
+
 def create_movement_data(app, gestionnaire):
     with app.app_context():
         product = Product(
@@ -64,6 +65,7 @@ def create_movement_data(app, gestionnaire):
         db.session.add(movement)
         db.session.commit()
 
+
 def test_export_stock_csv(app, client):
     create_stock_data(app)
 
@@ -91,6 +93,7 @@ def test_export_stock_pdf(app, client):
     assert "etat_du_stock.pdf" in response.headers["Content-Disposition"]
     assert response.data.startswith(b"%PDF")
 
+
 def test_export_movements_csv(app, client, gestionnaire):
     create_movement_data(app, gestionnaire)
 
@@ -110,6 +113,7 @@ def test_export_movements_csv(app, client, gestionnaire):
     assert "Approvisionnement" in contenu
     assert "CMD-001" in contenu
 
+
 def test_export_movements_pdf(app, client, gestionnaire):
     create_movement_data(app, gestionnaire)
 
@@ -118,4 +122,4 @@ def test_export_movements_pdf(app, client, gestionnaire):
     assert response.status_code == 200
     assert response.content_type == "application/pdf"
     assert "historique_mouvements.pdf" in response.headers["Content-Disposition"]
-    assert response.data.startswith(b"%PDF")    
+    assert response.data.startswith(b"%PDF")

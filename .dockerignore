@@ -4,3 +4,9 @@ __pycache__/
 venv/
 .venv/
 *.db
+.coverage
+coverage.xml
+htmlcov/
+tests/
+.flake8
+requirements-dev.txt

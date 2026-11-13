@@ -1,10 +1,7 @@
-
 from datetime import datetime, time, timedelta, timezone
 
 from flask_restx import Namespace, Resource
 from sqlalchemy import func
-from datetime import datetime, timedelta, timezone
-from app.models.stock_movement import StockMovement
 
 from app import db
 from app.constants import MOVEMENT_SORTIE
@@ -41,7 +38,7 @@ class DashboardStats(Resource):
             Product,
             Product.id == WarehouseStock.product_id
         ).filter(
-            Product.is_archived == False
+            Product.is_archived.is_(False)
         ).scalar()
         # 3. Nombre de mouvements effectués aujourd'hui
         now = datetime.now(timezone.utc)
@@ -54,14 +51,14 @@ class DashboardStats(Resource):
             StockMovement.created_at <= now
         ).count()
 
-        # 4. Nombre d'alertes de stock        
+        # 4. Nombre d'alertes de stock
         total_alerts = db.session.query(
             WarehouseStock.id
         ).join(
             Product,
             Product.id == WarehouseStock.product_id
         ).filter(
-            Product.is_archived == False,
+            Product.is_archived.is_(False),
             WarehouseStock.quantity < Product.minimum_stock
         ).count()
 
@@ -123,6 +120,7 @@ class DashboardStats(Resource):
             "top_products": top_products
         }, 200
 
+
 @dashboard_ns.route("/movements")
 @dashboard_ns.doc(security="Bearer")
 class DashboardMovements(Resource):
@@ -168,6 +166,7 @@ class DashboardMovements(Resource):
             ]
         }, 200
 
+
 @dashboard_ns.route("/top-exits")
 @dashboard_ns.doc(security="Bearer")
 class DashboardTopExits(Resource):
@@ -191,7 +190,7 @@ class DashboardTopExits(Resource):
             StockMovement.type == "SORTIE",
             StockMovement.created_at >= start_date,
             StockMovement.created_at <= now,
-            Product.is_archived == False
+            Product.is_archived.is_(False)
         ).group_by(
             Product.id,
             Product.name,
@@ -210,4 +209,4 @@ class DashboardTopExits(Resource):
                 }
                 for row in results
             ]
-        }, 200    
+        }, 200

@@ -39,6 +39,9 @@ movement_model = movements_ns.model("MovementCreate", {
         description="Motif (obligatoire pour un ajustement)"
     ),
     "reference": fields.String(description="Référence du bon"),
+    "supplier_id": fields.Integer(
+        description="Fournisseur (entrée uniquement, facultatif)"
+    ),
 })
 
 
@@ -52,6 +55,7 @@ class MovementList(Resource):
         "product_id": "Identifiant du produit",
         "warehouse_id": "Entrepôt source ou destination",
         "user_id": "Utilisateur ayant fait le mouvement",
+        "supplier_id": "Fournisseur (entrées)",
         "date_from": "Date de début incluse (AAAA-MM-JJ)",
         "date_to": "Date de fin incluse (AAAA-MM-JJ)",
         "page": "Active la pagination (avec per_page, 50 par défaut)",
@@ -74,6 +78,10 @@ class MovementList(Resource):
             )
         if "user_id" in filters:
             query = query.filter(StockMovement.user_id == filters["user_id"])
+        if "supplier_id" in filters:
+            query = query.filter(
+                StockMovement.supplier_id == filters["supplier_id"]
+            )
         if "warehouse_id" in filters:
             # Un transfert concerne aussi l'entrepôt de destination
             wid = filters["warehouse_id"]

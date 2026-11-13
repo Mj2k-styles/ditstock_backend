@@ -20,8 +20,8 @@ class StockAlerts(Resource):
         ).join(
             Warehouse, WarehouseStock.warehouse_id == Warehouse.id
         ).filter(
-            Product.is_archived == False,
-            Warehouse.is_archived == False,
+            Product.is_archived.is_(False),
+            Warehouse.is_archived.is_(False),
             WarehouseStock.quantity < Product.minimum_stock
         ).all()
 
