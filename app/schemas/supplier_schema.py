@@ -7,6 +7,11 @@ class SupplierSchema(Schema):
         validate=validate.Length(min=1, max=150)
     )
 
+    contact = fields.String(
+        allow_none=True,
+        validate=validate.Length(max=150)
+    )
+
     email = fields.Email(allow_none=True)
 
     phone = fields.String(

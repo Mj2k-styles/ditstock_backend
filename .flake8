@@ -1,0 +1,4 @@
+[flake8]
+# Lint du backend (CI). Les migrations sont générées par Alembic : exclues.
+max-line-length = 120
+exclude = .git,__pycache__,migrations,venv,.venv

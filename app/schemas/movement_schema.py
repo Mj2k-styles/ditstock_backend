@@ -40,6 +40,9 @@ class MovementCreateSchema(Schema):
         allow_none=True, validate=validate.Length(max=100)
     )
 
+    # Fournisseur à l'origine d'une entrée (facultatif)
+    supplier_id = fields.Integer(allow_none=True, strict=True)
+
     @validates_schema
     def validate_business_rules(self, data, **kwargs):
         movement_type = data.get("type")
@@ -64,6 +67,12 @@ class MovementCreateSchema(Schema):
                     "La quantité doit être strictement positive.", "quantity"
                 )
 
+        if data.get("supplier_id") is not None and movement_type != MOVEMENT_ENTREE:
+            raise ValidationError(
+                "Le fournisseur n'est indiqué que pour une entrée.",
+                "supplier_id"
+            )
+
         if movement_type == MOVEMENT_TRANSFERT:
             if data.get("warehouse_dest_id") is None:
                 raise ValidationError(
@@ -84,6 +93,7 @@ class MovementFilterSchema(Schema):
     product_id = fields.Integer()
     warehouse_id = fields.Integer()
     user_id = fields.Integer()
+    supplier_id = fields.Integer()
     date_from = fields.Date()
     date_to = fields.Date()
     page = fields.Integer(validate=validate.Range(min=1))
@@ -103,6 +113,10 @@ class MovementSchema(Schema):
     warehouse_dest_id = fields.Integer(allow_none=True)
     warehouse_dest_name = fields.Function(
         lambda m: m.warehouse_dest.name if m.warehouse_dest else None
+    )
+    supplier_id = fields.Integer(allow_none=True)
+    supplier_name = fields.Function(
+        lambda m: m.supplier.name if m.supplier else None
     )
     quantity = fields.Integer()
     reason = fields.String(allow_none=True)

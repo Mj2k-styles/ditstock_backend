@@ -6,6 +6,7 @@ from app import db
 from app.models.warehouse import Warehouse
 from app.schemas.warehouse_schema import WarehouseSchema
 from app.constants import ROLE_ADMIN
+from app.services import audit
 from app.utils.decorators import login_required, roles_required
 
 warehouses_ns = Namespace("warehouses", description="Gestion des entrepôts")
@@ -41,6 +42,8 @@ class WarehouseList(Resource):
 
         warehouse = Warehouse(**data)
         db.session.add(warehouse)
+        db.session.flush()
+        audit.record(audit.CREATION, "entrepôt", warehouse.id, {"nom": warehouse.name})
         db.session.commit()
 
         return warehouse_schema.dump(warehouse), 201
@@ -89,8 +92,11 @@ class WarehouseDetail(Resource):
             if existing:
                 return {"message": "Ce nom d'entrepôt existe déjà."}, 409
 
+        details = audit.changes(warehouse, data)
         for key, value in data.items():
             setattr(warehouse, key, value)
+        if details:
+            audit.record(audit.MODIFICATION, "entrepôt", warehouse.id, details)
 
         db.session.commit()
         return warehouse_schema.dump(warehouse), 200
@@ -106,6 +112,7 @@ class WarehouseDetail(Resource):
             return {"message": "Entrepôt introuvable."}, 404
 
         warehouse.is_archived = True
+        audit.record(audit.ARCHIVAGE, "entrepôt", warehouse.id, {"nom": warehouse.name})
         db.session.commit()
 
         return {"message": "Entrepôt archivé avec succès."}, 200

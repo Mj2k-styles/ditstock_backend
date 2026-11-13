@@ -11,6 +11,7 @@ from app.schemas.user_schema import (
     user_schema,
     users_schema,
 )
+from app.services import audit
 from app.utils.decorators import roles_required
 
 users_ns = Namespace(
@@ -62,6 +63,10 @@ class UserList(Resource):
         user.set_password(password)
 
         db.session.add(user)
+        db.session.flush()
+        audit.record(audit.CREATION, "utilisateur", user.id, {
+            "email": user.email, "role": user.role
+        })
         db.session.commit()
 
         return {
@@ -119,8 +124,12 @@ class UserDetail(Resource):
 
         # Le mot de passe passe par set_password pour être haché
         password = data.pop("password", None)
+        details = audit.changes(user, data)
         if password is not None:
             user.set_password(password)
+            details["mot_de_passe"] = "modifié"
+        if details:
+            audit.record(audit.MODIFICATION, "utilisateur", user.id, details)
 
         for key, value in data.items():
             setattr(user, key, value)
@@ -147,6 +156,9 @@ class UserDetail(Resource):
         # Désactivation plutôt que suppression : l'historique
         # (mouvements, audit) garde la trace de l'utilisateur.
         user.is_active = False
+        audit.record(audit.ARCHIVAGE, "utilisateur", user.id, {
+            "email": user.email
+        })
         db.session.commit()
 
         return {"message": "Utilisateur désactivé avec succès"}, 200

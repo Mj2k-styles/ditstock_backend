@@ -6,6 +6,7 @@ from app import db
 from app.models.category import Category
 from app.schemas.category_schema import CategorySchema
 from app.constants import ROLE_GESTIONNAIRE
+from app.services import audit
 from app.utils.decorators import login_required, roles_required
 
 
@@ -62,6 +63,8 @@ class CategoryList(Resource):
         category = Category(**data)
 
         db.session.add(category)
+        db.session.flush()
+        audit.record(audit.CREATION, "catégorie", category.id, {"nom": category.name})
         db.session.commit()
 
         return {
@@ -120,8 +123,11 @@ class CategoryDetail(Resource):
         if existing_category:
             return {"message": "Cette catégorie existe déjà"}, 409
 
+        details = audit.changes(category, data)
         for key, value in data.items():
             setattr(category, key, value)
+        if details:
+            audit.record(audit.MODIFICATION, "catégorie", category.id, details)
 
         db.session.commit()
 
@@ -142,6 +148,7 @@ class CategoryDetail(Resource):
             return {"message": "Catégorie introuvable"}, 404
 
         category.is_archived = True
+        audit.record(audit.ARCHIVAGE, "catégorie", category.id, {"nom": category.name})
         db.session.commit()
 
         return {

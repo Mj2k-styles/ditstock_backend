@@ -36,8 +36,8 @@ class StockCSVExport(Resource):
             Warehouse,
             Warehouse.id == WarehouseStock.warehouse_id
         ).filter(
-            Product.is_archived == False,
-            Warehouse.is_archived == False
+            Product.is_archived.is_(False),
+            Warehouse.is_archived.is_(False)
         ).all()
 
         output = io.StringIO(newline="")
@@ -75,7 +75,8 @@ class StockCSVExport(Resource):
                     "attachment; filename=etat_du_stock.csv"
             }
         )
-    
+
+
 @exports_ns.route("/stock/pdf")
 @exports_ns.doc(security="Bearer")
 class StockPDFExport(Resource):
@@ -89,8 +90,8 @@ class StockPDFExport(Resource):
             Warehouse,
             Warehouse.id == WarehouseStock.warehouse_id
         ).filter(
-            Product.is_archived == False,
-            Warehouse.is_archived == False
+            Product.is_archived.is_(False),
+            Warehouse.is_archived.is_(False)
         ).all()
 
         buffer = BytesIO()
@@ -159,6 +160,7 @@ class StockPDFExport(Resource):
             }
         )
 
+
 @exports_ns.route("/movements/csv")
 @exports_ns.doc(security="Bearer")
 class MovementCSVExport(Resource):
@@ -210,6 +212,7 @@ class MovementCSVExport(Resource):
                     "attachment; filename=historique_mouvements.csv"
             }
         )
+
 
 @exports_ns.route("/movements/pdf")
 @exports_ns.doc(security="Bearer")
@@ -288,6 +291,4 @@ class MovementPDFExport(Resource):
                 "Content-Disposition":
                     "attachment; filename=historique_mouvements.pdf"
             }
-        )    
-
-    
+        )

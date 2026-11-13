@@ -1,5 +1,4 @@
 from app.models.stock_movement import StockMovement
-from app.models.user import User
 from app import db
 from app.models.product import Product
 from app.models.warehouse import Warehouse
@@ -89,13 +88,15 @@ def test_dashboard_stats_with_stock(app, client):
     assert response.json["total_alerts"] == 1
     assert response.json["movements_today"] == 0
 
+
 def test_dashboard_movements_empty(client):
     response = client.get("/api/dashboard/movements")
 
     assert response.status_code == 200
     assert response.json == {
-    "movements": []
-}
+        "movements": []
+    }
+
 
 def test_dashboard_movements_with_data(app, client, gestionnaire):
     with app.app_context():
@@ -144,6 +145,7 @@ def test_dashboard_movements_with_data(app, client, gestionnaire):
     assert movements[0]["total"] == 1
     assert movements[1]["type"] == "SORTIE"
     assert movements[1]["total"] == 1
+
 
 def test_dashboard_top_exits(app, client, gestionnaire):
     with app.app_context():

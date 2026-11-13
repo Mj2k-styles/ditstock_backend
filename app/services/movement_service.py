@@ -5,6 +5,10 @@ Tout se passe dans UNE transaction : le mouvement et les mises à jour
 de warehouse_stocks sont validés ensemble (commit) ou annulés ensemble
 (rollback). Le stock n'est jamais modifié ailleurs que par ce module.
 """
+import logging
+
+from flask import current_app
+from prometheus_client import Counter
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 
@@ -20,8 +24,21 @@ from app.constants import (
 )
 from app.models.product import Product
 from app.models.stock_movement import StockMovement
+from app.models.supplier import Supplier
+from app.models.user import User
 from app.models.warehouse import Warehouse
 from app.models.warehouse_stock import WarehouseStock
+from app.services import audit
+from app.services.mailer import send_mail
+
+logger = logging.getLogger(__name__)
+
+# Métrique Prometheus : mouvements enregistrés, par type (tableau Grafana)
+MOVEMENTS_COUNTER = Counter(
+    "ditstock_stock_movements_total",
+    "Mouvements de stock enregistrés",
+    ["type"],
+)
 
 
 class MovementError(Exception):
@@ -45,6 +62,13 @@ def _active_warehouse(warehouse_id, label="Entrepôt"):
     if warehouse is None or warehouse.is_archived:
         raise MovementError(f"{label} introuvable.", 404)
     return warehouse
+
+
+def _active_supplier(supplier_id):
+    supplier = db.session.get(Supplier, supplier_id)
+    if supplier is None or supplier.is_archived:
+        raise MovementError("Fournisseur introuvable.", 404)
+    return supplier
 
 
 def _ensure_stock_row(warehouse_id, product_id):
@@ -137,13 +161,20 @@ def create_movement(data, user):
         product = _active_product(data["product_id"])
         warehouse = _active_warehouse(data["warehouse_id"])
         touched = [warehouse.id]
+        # Variation du stock par entrepôt (pour détecter un passage sous le seuil)
+        deltas = {}
+        supplier_id = data.get("supplier_id")
+        if supplier_id is not None:
+            _active_supplier(supplier_id)
 
         if movement_type == MOVEMENT_ENTREE:
             _change_stock(warehouse.id, product.id, quantity)
+            deltas[warehouse.id] = quantity
 
         elif movement_type == MOVEMENT_SORTIE:
             if not _change_stock(warehouse.id, product.id, -quantity):
                 raise _insufficient(warehouse, product)
+            deltas[warehouse.id] = -quantity
 
         elif movement_type == MOVEMENT_TRANSFERT:
             dest = _active_warehouse(
@@ -158,11 +189,14 @@ def create_movement(data, user):
                 raise _insufficient(warehouse, product)
             _change_stock(dest.id, product.id, quantity)
             touched.append(dest.id)
+            deltas[warehouse.id] = -quantity
+            deltas[dest.id] = quantity
 
         elif movement_type == MOVEMENT_AJUSTEMENT:
             # quantity = écart constaté (positif ou négatif)
             if not _change_stock(warehouse.id, product.id, quantity):
                 raise _insufficient(warehouse, product)
+            deltas[warehouse.id] = quantity
 
         movement = StockMovement(
             type=movement_type,
@@ -173,9 +207,28 @@ def create_movement(data, user):
             quantity=quantity,
             reason=data.get("reason"),
             reference=data.get("reference"),
+            supplier_id=supplier_id,
             user_id=user.id,
         )
         db.session.add(movement)
+        db.session.flush()
+
+        # Ajustements et transferts sont tracés dans le journal d'audit
+        if movement_type == MOVEMENT_AJUSTEMENT:
+            audit.record(audit.AJUSTEMENT, "produit", product.id, {
+                "mouvement_id": movement.id,
+                "entrepot": warehouse.name,
+                "ecart": quantity,
+                "motif": data.get("reason"),
+            }, user=user)
+        elif movement_type == MOVEMENT_TRANSFERT:
+            audit.record(audit.TRANSFERT, "produit", product.id, {
+                "mouvement_id": movement.id,
+                "de": warehouse.name,
+                "vers": dest.name,
+                "quantite": quantity,
+            }, user=user)
+
         db.session.commit()
 
     except Exception:
@@ -183,10 +236,50 @@ def create_movement(data, user):
         db.session.rollback()
         raise
 
+    MOVEMENTS_COUNTER.labels(type=movement_type).inc()
+
     stocks = [
         WarehouseStock.query.filter_by(
             warehouse_id=wid, product_id=product.id
         ).one()
         for wid in touched
     ]
+    _notify_threshold_crossings(product, stocks, deltas)
     return movement, stocks
+
+
+def _notify_threshold_crossings(product, stocks, deltas):
+    """
+    Alerte e-mail aux gestionnaires (cahier des charges, F7.2) quand le stock
+    d'un entrepôt PASSE sous le seuil : un seul e-mail par franchissement,
+    pas à chaque mouvement tant que le stock reste bas.
+    """
+    threshold = product.minimum_stock
+    crossed = [
+        s for s in stocks
+        if s.quantity < threshold <= s.quantity - deltas.get(s.warehouse_id, 0)
+    ]
+    if not crossed:
+        return
+
+    try:
+        recipients = [
+            email for (email,) in db.session.query(User.email).filter(
+                User.is_active.is_(True),
+                User.role.in_((ROLE_GESTIONNAIRE, ROLE_ADMIN)),
+            )
+        ]
+        link = f"{current_app.config['FRONTEND_URL']}/alertes"
+        for stock in crossed:
+            warehouse = db.session.get(Warehouse, stock.warehouse_id)
+            send_mail(
+                recipients,
+                f"[DitStock] Stock bas : {product.name}",
+                f"Le stock de « {product.name} » ({product.sku}) dans "
+                f"l'entrepôt « {warehouse.name} » est passé à {stock.quantity}, "
+                f"sous son seuil minimal de {threshold}.\n\n"
+                f"Voir les alertes : {link}\n",
+            )
+    except Exception:
+        # Une alerte e-mail ne doit jamais faire échouer un mouvement
+        logger.exception("Alerte de seuil non envoyée")
