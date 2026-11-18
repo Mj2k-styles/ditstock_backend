@@ -1,0 +1,39 @@
+# Développement local du backend seul : API + PostgreSQL.
+#   docker compose up --build   →  Swagger sur http://localhost:5000
+# L'application complète (frontend, supervision) est déployée par le dépôt de déploiement.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ditstock
+      POSTGRES_PASSWORD: ditstock-dev
+      POSTGRES_DB: ditstock
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ditstock -d ditstock"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: .
+    entrypoint: ["sh", "./docker-entrypoint.sh"]
+    command: ["flask", "run", "--debug", "--host", "0.0.0.0", "--port", "5000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ditstock:ditstock-dev@db:5432/ditstock
+      SECRET_KEY: dev-secret-key-a-changer
+      JWT_SECRET_KEY: dev-jwt-secret-key-a-changer-32-octets
+      LOG_FORMAT: text
+      DEBUG_METRICS: "1"
+      RUN_MIGRATIONS: "1"
+      SEED_DEMO: "1"
+    volumes:
+      - .:/srv/backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

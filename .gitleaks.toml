@@ -1,0 +1,11 @@
+# Configuration Gitleaks (job « secrets » de la CI) : règles par défaut + exceptions documentées.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valeurs factices documentées (pas de vrais secrets)"
+paths = [
+  # Mots de passe et clés de test, valeurs « à remplacer » des exemples
+  '''tests/.*''',
+  '''(^|/)\.env\.example$''',
+]
