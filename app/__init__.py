@@ -32,6 +32,10 @@ def create_app(test_config=None):
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
         "DATABASE_URL", "sqlite:///gestion_stock.db"
     )
+    # Vérifie chaque connexion du pool avant usage : après un redémarrage de PostgreSQL
+    # (pod remplacé, redéploiement), les connexions mortes sont remplacées au lieu de
+    # provoquer une erreur 500.
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 
     # Configuration JWT : clé de signature et durée de vie des tokens
     app.config["JWT_SECRET_KEY"] = os.getenv(

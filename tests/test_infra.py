@@ -165,3 +165,8 @@ def test_options_booleennes(monkeypatch, value, expected):
     from app import _env_bool
     monkeypatch.setenv("MAIL_USE_TLS", value)
     assert _env_bool("MAIL_USE_TLS") is expected
+
+
+def test_connexions_verifiees_avant_usage(app):
+    """Après un redémarrage de PostgreSQL, les connexions mortes du pool sont remplacées."""
+    assert app.config["SQLALCHEMY_ENGINE_OPTIONS"]["pool_pre_ping"] is True
