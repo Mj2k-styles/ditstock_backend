@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backend-init
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: backend-init
+          image: ditstock-backend:persistence-test
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - "mkdir -p /tmp/prometheus && flask db upgrade && ALLOW_DEMO_SEED=1 flask seed-demo"
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+psycopg2://ditstock:ditstock-dev@postgres:5432/ditstock"
+            - name: SECRET_KEY
+              value: "cle-secrete-test"
+            - name: JWT_SECRET_KEY
+              value: "cle-jwt-test-32-caracteres-minimum"
+            - name: PROMETHEUS_MULTIPROC_DIR
+              value: "/tmp/prometheus"
