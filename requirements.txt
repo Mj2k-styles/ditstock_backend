@@ -1,5 +1,5 @@
 # Dépendances de l'application (image Docker de production)
-Flask>=3.0
+Flask>=3.1.3
 Flask-SQLAlchemy>=3.0
 Flask-Migrate>=4.0
 flask-restx>=1.3
